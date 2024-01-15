@@ -107,192 +107,23 @@ class DashboardGUI(Api):
         self.style.configure('Green.TButton', foreground='black', background='white', activeforeground='white', activebackground='blue', padding=10)
 
         # Create the button using the custom style
-        generate_button = ttk.Button(second_center_frame, text="Generate", command=lambda: self.uploadFileThread(), style='Green.TButton',)
+        generate_button = ttk.Button(second_center_frame, text="Generate", command=lambda: self.UrlGenerate(), style='Green.TButton',)
         generate_button.pack(side=tk.LEFT, padx=10 )
  
 
-
-    # def start_progress(self,percentage):
-     
-    #     self.progress_bar["value"] = percentage
-    #     self.master.update_idletasks()  # Update the GUI immediately
-   
-    
-
-    def on_close_websocket(self):
-        # Set the connection image to "disconnected" when WebSocket connection is closed
-        
-        self.connection_label.config(image=self.disconnected_logo)
-        self.connection_text_label.config(text="Disconnected to server Success")
-        self.disconnect_button.config(text="connect",command=lambda:self.start_websocket_client_thread(self.terminal_text))
-    
-    def on_open_websocket(self):
-        time.sleep(1)
-        # Set the connection image to "connected" when WebSocket connection is open
-        self.connection_label.config(image=self.connected_logo)
-        self.connection_text_label.config(text="Connected to server Success")
-        self.disconnect_button.config(text="Disconnect",command=self.disconnectWebsocket)
-
-    def disconnectWebsocket(self):
-        if self.websocket_obj and self.websocket_obj.sock:
-            self.websocket_obj.close()
-            self.is_websocket_connected = False
-            self.on_close_websocket()
-
-            my_thread = MyThread()
-            my_thread.start()
-
-            # Let the thread run for some time (e.g., 5 seconds)
-            time.sleep(1)
-
-            # Stop the thread gracefully
-            my_thread.stop()
-            my_thread.join()
-
-            self.terminal_text.insert("1.0", f"Disconnected with server !!!\n","danger")
-            self.terminal_text.tag_configure("danger", foreground="red")
-            print("Thread stopped.")
-            
-        else:
-            print("WebSocket is not connected.")         
-           
-
-    def start_websocket_client_thread(self, terminal_text):
-        websocket_thread = threading.Thread(target=self.start_websocket_client, args=(terminal_text,))
-        websocket_thread.start()
-
-    def start_websocket_client(self, terminal_text):
-        print(terminal_text, " initial")
-        # "kitSERVER5@##@d" root password
-        user_name = self.user_data['username']
-        print(user_name," user data email ...")
-        
-        websocket_client = WebSocketClient(f"{self.websocket_api}{user_name}/", terminal_text,user_name,self)
-        self.on_open_websocket()
-        websocket_client.connect()
-        # print("\n\n",a," websocket connected md")
-
-    def restartWebsocket(self):
-        print("restarting...")
-        self.terminal_text.insert("1.0", f"Reconnecting to server... !!!\n","info")
-        self.terminal_text.tag_configure("info", foreground="blue")
-        self.disconnectWebsocket()
-        self.start_websocket_client_thread(self.terminal_text)
-
-
-    def uploadFileThread(self):
-        print("this is threading ...")
-        generate_thread = threading.Thread(target=self.uploadFile, args=(self.terminal_text,))
+    def UrlGenerate(self):
+        user_input = self.file_browser.get()
+        generate_thread = threading.Thread(target=self.ShareAction, args=(user_input,))
         generate_thread.start()
 
-    def uploadFile(self, terminal_text):
-        import os
-        from core.signed import LocalSignPdf
-      
-        file_path = self.selected_file
-        folder_path = self.selected_folder
-        # Code execution logic here
-
-        # for file
-        if self.selected_file is not None:            
-            file_id = "clientSoftware"
-            root = tk.Tk()
-            root.withdraw()
-
-            popup = PopupWindow(f"Request From Server {self.user_data['username']}",self,file_id)
-            self.master.wait_window(popup)
-            
-            code = "signature is selected ::"+self.private_signature_file+"\n"
-            terminal_text.insert("1.0", code,"info")
-            terminal_text.tag_configure("info", foreground="blue")
-            code = file_path + " is selected \n"
-            
-            if "signed-by-kantipur" in file_path:
-                print("it is already signed")
-                messagebox.showinfo("Signed Failed", f"it is already signed !!!")
-            else:
-                save_or_not,pdf,pdf_id= LocalSignPdf(self.user_data,file_path,self.private_signature_file)
-
-                if save_or_not:
-                    messagebox.showinfo("Signed Successful", f"signed success.please visit signed folder !!!")
-            
-            # self.selected_folder = None
-                    
-        elif folder_path is not None:      
-
-            file_id = "clientSoftware"
-            root = tk.Tk()
-            root.withdraw()
-
-            popup = PopupWindow(f"Request From Server {self.user_data['username']}",self,file_id)
-            self.master.wait_window(popup)
-            
-            code = "signature is selected ::"+self.private_signature_file+"\n"
-            terminal_text.insert("1.0", code,"info")
-            terminal_text.tag_configure("info", foreground="blue")
-            code = folder_path + " is selected \n"
-            
-            for foldername, subfolders, filenames in os.walk(folder_path):
-                for filename in filenames:
-                    file_pa = os.path.join(foldername, filename)
-                    print(os.path.join(foldername, filename))
-                    if "signed-by-kantipur" in filename:
-                        terminal_text.insert("1.0", f"{filename} already signed!!!\n", "info")
-                        terminal_text.tag_configure("info", foreground="blue")
-                        continue
-                    save_or_not,pdf,pdf_id= LocalSignPdf(self.user_data,file_pa,self.private_signature_file)
-                    if save_or_not == True:
-                        terminal_text.insert("1.0", f"{filename} signed success!!!\n","success")
-                        terminal_text.tag_configure("success", foreground="green")
-
-            messagebox.showinfo("Signed Successful", f"signed success.please visit signed folder !!!")
-            openFolder(folder_path)
-            
-        
-        else:
-            terminal_text.insert("1.0", "Please select a file!\n","error")
-            terminal_text.tag_configure("error", foreground="red")
-            messagebox.showinfo("Error Please select a file ","Error Please select a file ...!")
-            return
-
-
-        terminal_text.insert("1.0", code,"info")
-        terminal_text.tag_configure("info", foreground="blue")
-        
-        
-
-    def run_code(self, terminal_text):
-        # Execute the code and capture the output
-        import sys
-        from io import StringIO
-
-        # Create a stream to redirect the output
-        output_stream = StringIO()
-        sys.stdout = output_stream
-        print('\n')
-        # Execute the code
-        try:
-            exec(terminal_text.get("1.0", tk.TOP), globals())
-        except Exception as e:
-            output = str(e)
-        else:
-            output = ""
-
-        # Restore the standard output and get the captured output
-        sys.stdout = sys.__stdout__
-        captured_output = output_stream.getvalue()
-
-        terminal_text.insert("1.0", captured_output + output)
+    def ShareAction(self, url):
+        from utilities.action import SocialShare
+        obj = SocialShare(url)
+        obj.IncreaseCountShare(10)
+        obj.exit()
 
     def button_clicked(self):
         print("Button clicked!")
-
-    def insert_terminal_data(self, data):
-        self.terminal_text.insert("1.0", data)
-
-    def signedSignature(self,folder_path):
-        print(" signing all pdf files inside this folder...")
-
 
     def on_hover(self,event,variable_name):
         event.widget.config(cursor="hand2")  # Change the cursor to a hand pointer on hover
@@ -306,20 +137,6 @@ class DashboardGUI(Api):
         event.widget.config(cursor="")  # Reset the cursor to the default on leaving
         # You can reset other hover effect configurations here if needed
 
-
-    def open_file_dialog(self):
-        file_path = filedialog.askopenfilename()
-        self.file_browser.delete(0, tk.END)
-        self.file_browser.insert(0, file_path)
-        self.selected_file = file_path  # Store the selected file path
-        self.selected_folder = None
-
-    def open_folder_dialog(self):
-        folder_path = filedialog.askdirectory()  # Use askdirectory() instead of askopenfilename()
-        self.file_browser.delete(0, tk.END)
-        self.file_browser.insert(0, folder_path)
-        self.selected_folder = folder_path  # Store the selected folder path
-        self.selected_file = None
 
     def open_browser_for_file(self,url):
         print(url,"\n")
@@ -342,17 +159,3 @@ class DashboardGUI(Api):
         # Bind the close event to destroy the tooltip when the mouse leaves the image
         event.widget.bind("<Leave>", close_tooltip)
 
-        
-# DashboardGUI({'first_name':"md","email":"admin@gmail.com",'username':"aasd"})
-
-class MyThread(threading.Thread):
-    def __init__(self):
-        super().__init__()
-        self._stop_event = threading.Event()
-
-    def run(self):
-        while not self._stop_event.is_set():
-            print("Thread is running...")
-
-    def stop(self):
-        self._stop_event.set()
