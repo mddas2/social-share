@@ -62,7 +62,7 @@ class DashboardGUI(Api):
         logo_label = ttk.Label(upper_frame, image=self.logo)
         logo_label.pack(side=tk.LEFT, anchor=tk.NW)
 
-        heading_label = ttk.Label(upper_frame, text="Kantipur Social Share", font=('Arial', 18, 'bold'))
+        heading_label = ttk.Label(upper_frame, text="Kantipur Infotech Sharing System", font=('Arial', 18, 'bold'))
         heading_label.pack(side=tk.LEFT, anchor=tk.NW, padx=10, pady=(10, 5))
 
         # Profile section
@@ -119,7 +119,7 @@ class DashboardGUI(Api):
         fetch_display = ttk.Frame(self.master, padding=2)
         fetch_display.pack()
 
-        self.portal_name = ttk.Label(fetch_display, text="Kantipur Social Share", font=('Arial', 13, 'bold'),foreground='blue')
+        self.portal_name = ttk.Label(fetch_display, text="Kantipur Infotech Sharing System", font=('Arial', 13, 'bold'),foreground='blue')
         self.portal_name.pack(side=tk.LEFT, anchor=tk.NW, padx=10, pady=(10, 5))
 
         seperator = ttk.Label(fetch_display, text=":", font=('Arial', 13, 'bold'),foreground='black')

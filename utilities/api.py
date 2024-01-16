@@ -6,7 +6,6 @@ class Api:
         #stand alone "pyinstaller --onefile --icon=images/kantipur.ico  --distpath output_folder login.py"
         # "kitSERVER5@##@d" root password
 
-        
         self.port = "8004"
         # self.port = "8001"
 

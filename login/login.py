@@ -30,7 +30,7 @@ class LoginGUI:
         # Create header label with updated style
         header_label = ttk.Label(
             self.master,
-            text="Kantipur Share Social",
+            text="Kantipur Infotech Sharing System",
             font=self.custom_font,
             background="#f2f2f2",
             foreground="#333333"  # Custom header text color
