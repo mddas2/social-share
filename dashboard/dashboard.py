@@ -9,7 +9,8 @@ from utilities.api import Api
 import webbrowser
 import time
 from utilities.os_action import getDesktop,openFolder
-
+from utilities.scrap import get_site_name_with_requests
+from utilities.action import SocialShare
 
 class DashboardGUI(Api):
     def __init__(self,user_data):
@@ -94,10 +95,15 @@ class DashboardGUI(Api):
         display_frame.pack()
   
 
-        self.file_browser = ttk.Entry(display_frame, font=('Arial', 12))
-        self.file_browser.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        self.news_url = ttk.Entry(display_frame, font=('Arial', 12),width=30)
+        self.news_url.pack(side=tk.LEFT, fill=tk.X, expand=True)
 
-        second_center_frame = ttk.Frame(self.master, padding=20)
+        self.news_url.bind('<KeyRelease>', lambda event: self.FetchPortalData(event))
+
+        self.count = ttk.Entry(display_frame, font=('Arial', 12),width=6)
+        self.count.pack(side=tk.RIGHT, fill=tk.X ,expand=True)
+        
+        second_center_frame = ttk.Frame(self.master, padding=15)
         second_center_frame.pack()
 
          # Initialize the style object
@@ -107,19 +113,51 @@ class DashboardGUI(Api):
         self.style.configure('Green.TButton', foreground='black', background='white', activeforeground='white', activebackground='blue', padding=10)
 
         # Create the button using the custom style
-        generate_button = ttk.Button(second_center_frame, text="Generate", command=lambda: self.UrlGenerate(), style='Green.TButton',)
+        generate_button = ttk.Button(second_center_frame, text="Share", command=lambda: self.UrlGenerate(), style='Green.TButton',)
         generate_button.pack(side=tk.LEFT, padx=10 )
- 
 
+        fetch_display = ttk.Frame(self.master, padding=2)
+        fetch_display.pack()
+
+        self.portal_name = ttk.Label(fetch_display, text="Kantipur Social Share", font=('Arial', 13, 'bold'),foreground='blue')
+        self.portal_name.pack(side=tk.LEFT, anchor=tk.NW, padx=10, pady=(10, 5))
+
+        seperator = ttk.Label(fetch_display, text=":", font=('Arial', 13, 'bold'),foreground='black')
+        seperator.pack(side=tk.LEFT, anchor=tk.NW, padx=10, pady=(10, 5))
+
+        portal_name = ttk.Label(fetch_display, text="count", font=('Arial', 13, 'bold'),foreground='green')
+        portal_name.pack(side=tk.LEFT, anchor=tk.NW, padx=10, pady=(10, 5))
+
+    def FetchPortalData(self,event):
+        url = self.news_url.get()
+        portal_name,is_ok = get_site_name_with_requests(url)
+        self.portal_name.configure(text=portal_name)
+
+        if is_ok:
+            get_total_shares = self.get_total_shares(url)
+            self.count.configure(text = get_total_shares)
+        
+    def CountEvent(self,event):
+        url = self.news_url.get()
+        portal_name = get_site_name_with_requests(url)
+        self.portal_name.configure(text=portal_name)
+   
     def UrlGenerate(self):
-        user_input = self.file_browser.get()
-        generate_thread = threading.Thread(target=self.ShareAction, args=(user_input,))
+        user_input = self.news_url.get()
+        generate_thread = threading.Thread(target=self.ShareAction, args=(user_input,self.count.get()))
         generate_thread.start()
 
-    def ShareAction(self, url):
-        from utilities.action import SocialShare
+    def get_total_shares(self,url):
+        # obj = SocialShare(url)
+        return 10
+        # return obj.getLiveTotalShare()
+    
+    def ShareAction(self, url,count):
+        number = count.strip()
+        number = int(number)
+ 
         obj = SocialShare(url)
-        obj.IncreaseCountShare(10)
+        obj.IncreaseCountShare(number)
         obj.exit()
 
     def button_clicked(self):

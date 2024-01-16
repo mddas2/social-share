@@ -95,10 +95,10 @@ class Update(Api):
 
     def main(self,start_progress):
         total = 6000
-        for i in range(total):
-            percent_complete = (i/total)*100
-            # print(percent_complete)
-            start_progress(percent_complete) #display progress bar
+        # for i in range(total):
+        #     percent_complete = (i/total)*100
+        #     # print(percent_complete)
+        #     start_progress(percent_complete) #display progress bar
         return True
         # if self.download_and_install(start_progress):            
         #     self.checkInstall()
