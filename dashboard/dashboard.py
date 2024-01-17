@@ -25,7 +25,7 @@ class DashboardGUI(Api):
         self.master = master
         self.master.title("Dashboard")
         self.master.configure(bg="#f2f2f2")
-        self.master.geometry("450x250")
+        self.master.geometry("550x300")
 
         # Set window icon
         self.master.iconbitmap("images/kantipur.ico")
@@ -44,9 +44,12 @@ class DashboardGUI(Api):
         # self.update_thread.start()
 
         # self.start_websocket_client_thread(self.terminal_text)# thread
-        print("below code not running ")
-
         
+        self.social_share_obj = None
+        self.total_share_count = '0'
+        self.ok_url = ''
+        self.is_share = True
+
         self.master.mainloop()
 
     def create_widgets(self):
@@ -96,12 +99,15 @@ class DashboardGUI(Api):
   
 
         self.news_url = ttk.Entry(display_frame, font=('Arial', 12),width=30)
+        #self.news_url.insert(0, 'https://newspolar.com/archives/226068')  # Set the initial value
         self.news_url.pack(side=tk.LEFT, fill=tk.X, expand=True)
 
         self.news_url.bind('<KeyRelease>', lambda event: self.FetchPortalData(event))
 
         self.count = ttk.Entry(display_frame, font=('Arial', 12),width=6)
         self.count.pack(side=tk.RIGHT, fill=tk.X ,expand=True)
+
+        self.count.bind('<KeyRelease>', lambda event: self.CountEvent(event))
         
         second_center_frame = ttk.Frame(self.master, padding=15)
         second_center_frame.pack()
@@ -113,8 +119,8 @@ class DashboardGUI(Api):
         self.style.configure('Green.TButton', foreground='black', background='white', activeforeground='white', activebackground='blue', padding=10)
 
         # Create the button using the custom style
-        generate_button = ttk.Button(second_center_frame, text="Share", command=lambda: self.UrlGenerate(), style='Green.TButton',)
-        generate_button.pack(side=tk.LEFT, padx=10 )
+        self.generate_button = ttk.Button(second_center_frame, text="Share", command=lambda: self.UrlGenerate(), style='Green.TButton',state='disabled')
+        self.generate_button.pack(side=tk.LEFT, padx=10 )
 
         fetch_display = ttk.Frame(self.master, padding=2)
         fetch_display.pack()
@@ -125,40 +131,61 @@ class DashboardGUI(Api):
         seperator = ttk.Label(fetch_display, text=":", font=('Arial', 13, 'bold'),foreground='black')
         seperator.pack(side=tk.LEFT, anchor=tk.NW, padx=10, pady=(10, 5))
 
-        portal_name = ttk.Label(fetch_display, text="count", font=('Arial', 13, 'bold'),foreground='green')
-        portal_name.pack(side=tk.LEFT, anchor=tk.NW, padx=10, pady=(10, 5))
+        self.portal_name_count = ttk.Label(fetch_display, text="count", font=('Arial', 13, 'bold'),foreground='green')
+        self.portal_name_count.pack(side=tk.LEFT, anchor=tk.NW, padx=10, pady=(10, 5))
+        
+    def threadFetchPortalData(self,event):
+        generate_thread = threading.Thread(target=self.FetchPortalData, args=(event))
+        generate_thread.start()
 
     def FetchPortalData(self,event):
         url = self.news_url.get()
-        portal_name,is_ok = get_site_name_with_requests(url)
-        self.portal_name.configure(text=portal_name)
-
-        if is_ok:
-            get_total_shares = self.get_total_shares(url)
-            self.count.configure(text = get_total_shares)
+        url = url.strip()
+        is_ok = False
+        if url != self.ok_url:
+            portal_name,is_ok = get_site_name_with_requests(url)
+            self.portal_name.configure(text=portal_name)
+        
+        if is_ok and self.is_share == True:
+            self.generate_button['state'] = 'disabled'
+            self.ok_url = url.strip()
+            generate_thread = threading.Thread(target=self.get_total_shares, args=(url,))
+            generate_thread.start()
+        else:
+            print("not ok")
+            # self.generate_button['state'] = 'disabled'
+            # self.social_share_obj = None
         
     def CountEvent(self,event):
-        url = self.news_url.get()
-        portal_name = get_site_name_with_requests(url)
-        self.portal_name.configure(text=portal_name)
+        total_share_count = self.total_share_count + '+' + self.count.get()
+        self.portal_name_count.configure(text = total_share_count)
+
    
     def UrlGenerate(self):
+        self.generate_button['state'] = 'disabled'
+        self.is_share = False
         user_input = self.news_url.get()
         generate_thread = threading.Thread(target=self.ShareAction, args=(user_input,self.count.get()))
         generate_thread.start()
 
     def get_total_shares(self,url):
-        # obj = SocialShare(url)
-        return 10
-        # return obj.getLiveTotalShare()
+        obj = SocialShare(url)
+        self.social_share_obj = obj
+        total_share= obj.getLiveTotalShare()
+        # print(total_share, " total live shares" )
+        self.total_share_count = total_share
+        self.portal_name_count.configure(text = total_share)
+        self.generate_button['state'] = 'normal'
     
     def ShareAction(self, url,count):
         number = count.strip()
         number = int(number)
  
-        obj = SocialShare(url)
+        obj = self.social_share_obj
         obj.IncreaseCountShare(number)
         obj.exit()
+        self.is_share = True
+        self.generate_button['state'] = 'normal'
 
     def button_clicked(self):
         print("Button clicked!")
