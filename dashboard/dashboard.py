@@ -49,8 +49,9 @@ class DashboardGUI(Api):
         self.total_share_count = '0'
         self.ok_url = ''
         self.is_share = True
+        self.url_count_datasets = {}
 
-        self.progress_bar = ttk.Progressbar(self.master, mode='indeterminate', length=100)
+        # self.portal_name_count_number = 0
 
         self.master.mainloop()
 
@@ -103,6 +104,7 @@ class DashboardGUI(Api):
         self.news_url = ttk.Entry(display_frame, font=('Arial', 12),width=30)
         #self.news_url.insert(0, 'https://newspolar.com/archives/226068')  # Set the initial value
         self.news_url.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        # self.news_url.insert(0, "Enter url")
 
         self.news_url.bind('<KeyRelease>', lambda event: self.FetchPortalData(event))
 
@@ -110,7 +112,8 @@ class DashboardGUI(Api):
         self.count.pack(side=tk.RIGHT, fill=tk.X ,expand=True)
 
         self.count.bind('<KeyRelease>', lambda event: self.CountEvent(event))
-        
+        # self.count.insert(0, "number")
+
         second_center_frame = ttk.Frame(self.master, padding=15)
         second_center_frame.pack()
 
@@ -122,7 +125,9 @@ class DashboardGUI(Api):
 
         # Create the button using the custom style
         self.generate_button = ttk.Button(second_center_frame, text="Share", command=lambda: self.UrlGenerate(), style='Green.TButton',state='disabled')
-        self.generate_button.pack(side=tk.LEFT, padx=10 )
+        self.generate_button.pack(side=tk.LEFT, padx=6 )
+
+        self.progress_bar = ttk.Progressbar(second_center_frame, mode='indeterminate', length=100)
 
         fetch_display = ttk.Frame(self.master, padding=2)
         fetch_display.pack()
@@ -149,6 +154,7 @@ class DashboardGUI(Api):
             self.portal_name.configure(text=portal_name)
         
         if is_ok and self.is_share == True:
+            self.url_count_datasets[url] = 0
             self.start_busy()
             self.ok_url = url.strip()
             generate_thread = threading.Thread(target=self.get_total_shares, args=(url,))
@@ -159,33 +165,50 @@ class DashboardGUI(Api):
             # self.social_share_obj = None
         
     def CountEvent(self,event):
-        total_share_count = self.total_share_count + '+' + self.count.get()
+        total_share_count = str(self.total_share_count) + '+' + self.count.get()
         self.portal_name_count.configure(text = total_share_count)
-
-    def UrlGenerate(self):
-        self.is_share = False
-        user_input = self.news_url.get()
-        generate_thread = threading.Thread(target=self.ShareAction, args=(user_input,self.count.get()))
-        generate_thread.start()
 
     def get_total_shares(self,url):
         obj = SocialShare(url)
         self.social_share_obj = obj
         total_share= obj.getLiveTotalShare()
+        try:
+            total_share = int(total_share)
+        except:
+            total_share = 0
+
         # print(total_share, " total live shares" )
         self.total_share_count = total_share
         self.portal_name_count.configure(text = total_share)
         self.stop_busy()
+
+    def UrlGenerate(self):
+        self.start_busy()
+        self.is_share = False
+        user_input = self.news_url.get()
+        print(user_input, " clicking  ...")
+        generate_thread = threading.Thread(target=self.ShareAction, args=(user_input,self.count.get()))
+        generate_thread.start()
     
     def ShareAction(self, url,count):
-        number = count.strip()
-        number = int(number)
- 
+        try:
+            number = count.strip()
+            number = int(number)
+        except:
+            number = 10
+
         obj = self.social_share_obj
+        # print("obj:" , obj)
         obj.IncreaseCountShare(number)
         self.stop_busy()
-        obj.exit()
+        # obj.exit()
         self.is_share = True
+
+        self.url_count_datasets[url] = self.url_count_datasets[url] + number
+        total = self.url_count_datasets[url]  + int(self.total_share_count)
+
+        self.portal_name_count.configure(text=str(total))
+
 
     def button_clicked(self):
         print("Button clicked!")
