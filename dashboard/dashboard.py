@@ -50,6 +50,8 @@ class DashboardGUI(Api):
         self.ok_url = ''
         self.is_share = True
 
+        self.progress_bar = ttk.Progressbar(self.master, mode='indeterminate', length=100)
+
         self.master.mainloop()
 
     def create_widgets(self):
@@ -147,7 +149,7 @@ class DashboardGUI(Api):
             self.portal_name.configure(text=portal_name)
         
         if is_ok and self.is_share == True:
-            self.generate_button['state'] = 'disabled'
+            self.start_busy()
             self.ok_url = url.strip()
             generate_thread = threading.Thread(target=self.get_total_shares, args=(url,))
             generate_thread.start()
@@ -160,9 +162,7 @@ class DashboardGUI(Api):
         total_share_count = self.total_share_count + '+' + self.count.get()
         self.portal_name_count.configure(text = total_share_count)
 
-   
     def UrlGenerate(self):
-        self.generate_button['state'] = 'disabled'
         self.is_share = False
         user_input = self.news_url.get()
         generate_thread = threading.Thread(target=self.ShareAction, args=(user_input,self.count.get()))
@@ -175,7 +175,7 @@ class DashboardGUI(Api):
         # print(total_share, " total live shares" )
         self.total_share_count = total_share
         self.portal_name_count.configure(text = total_share)
-        self.generate_button['state'] = 'normal'
+        self.stop_busy()
     
     def ShareAction(self, url,count):
         number = count.strip()
@@ -183,9 +183,9 @@ class DashboardGUI(Api):
  
         obj = self.social_share_obj
         obj.IncreaseCountShare(number)
+        self.stop_busy()
         obj.exit()
         self.is_share = True
-        self.generate_button['state'] = 'normal'
 
     def button_clicked(self):
         print("Button clicked!")
@@ -224,3 +224,31 @@ class DashboardGUI(Api):
         # Bind the close event to destroy the tooltip when the mouse leaves the image
         event.widget.bind("<Leave>", close_tooltip)
 
+    def start_busy(self):
+        # Disable the button
+        self.generate_button['state'] = 'disabled'
+
+        # Place the progress bar next to the button
+        self.progress_bar.place(in_=self.generate_button, relx=1.05, rely=-0.1, anchor='ne')
+
+        # Start the progress bar animation in a separate thread
+        threading.Thread(target=self.animate_progress_bar).start()
+
+        # Simulate some time-consuming task (replace this with your actual task)
+
+        # Stop the progress bar and enable the button after the task is done
+
+
+    def animate_progress_bar(self):
+        # Start the progress bar animation
+        self.progress_bar.start()
+
+    def stop_busy(self):
+        # Stop the progress bar animation
+        self.progress_bar.stop()
+
+        # Enable the button
+        self.generate_button['state'] = 'normal'
+
+        # Remove the progress bar
+        self.progress_bar.place_forget()
